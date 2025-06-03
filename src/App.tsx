@@ -4,10 +4,17 @@ import usersFromServer from './api/users';
 import './App.scss';
 import { TodoList } from './components/TodoList';
 
-const enrichedTodos = todosFromServer.map(todo => ({
-  ...todo,
-  user: usersFromServer.find(user => user.id === todo.userId)!,
-}));
+const enrichedTodos = todosFromServer
+  .map(todo => {
+    const userFound = usersFromServer.find(user => user.id === todo.userId);
+
+    if (!userFound) {
+      return null;
+    }
+
+    return { ...todo, userFound };
+  })
+  .filter((todo): todo is NonNullable<typeof todo> => todo !== null);
 
 export const App = () => {
   const [todos, setTodos] = useState(enrichedTodos);
@@ -22,12 +29,16 @@ export const App = () => {
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(cleanTitle(e.target.value));
-    if (titleError) setTitleError('');
+    if (titleError) {
+      setTitleError('');
+    }
   };
 
   const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedUserId(e.target.value);
-    if (userError) setUserError('');
+    if (userError) {
+      setUserError('');
+    }
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -45,13 +56,16 @@ export const App = () => {
       hasError = true;
     }
 
-    if (hasError) return;
+    if (hasError) {
+      return;
+    }
 
     const newId = todos.length ? Math.max(...todos.map(t => t.id)) + 1 : 1;
     const user = usersFromServer.find(u => u.id === +selectedUserId);
 
     if (!user) {
       setUserError('Please choose a valid user');
+
       return;
     }
 
